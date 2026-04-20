@@ -20,6 +20,6 @@ app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/grupos', require('./routes/grupos'));
 app.use('/api/asistencia', require('./routes/asistencia'));
 
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log("Servidor corriendo");
 });
