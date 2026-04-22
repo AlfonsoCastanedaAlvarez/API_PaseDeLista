@@ -1,0 +1,13 @@
+@baseurl = https://api-pasedelista.onrender.com/api/
+GET {{baseurl}}asistencia?apikey=02945d48-ec75-43ed-b0b8-1eec056446aa
+###
+POST {{baseurl}}asistencia
+Content-Type: application/json
+
+{
+  "apikey": "02945d48-ec75-43ed-b0b8-1eec056446aa",
+  "dipositivoId": "123",
+  "alumnoId": "203415",
+  "materiaId": "69e693a9979781b575375bbd",
+  "fechaHora": "Mon Apr 13 2026 08:05:00 GMT-0600"
+}

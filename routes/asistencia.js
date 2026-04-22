@@ -121,6 +121,24 @@ router.post('/', async (req, res) => {
   try {
     const { apikey, dipositivoId, alumnoId, materiaId, fechaHora } = req.body;
 
+    // lo primero que se revisa antes de cualquier otra cosa
+    // Si este dispositivo ya registró a este alumno en esta materia alguna vez,
+    // regresa ese registro inmediatamente y corta aquí, sin tocar la base de datos
+    const registroExistente = await Asistencia.findOne({
+      dipositivoId,
+      alumnoId,
+      materiaId
+    });
+
+    if (registroExistente) {
+      return res.json({
+        mensaje: "Ya registrado",
+        fecha: registroExistente.fechaHora,
+        estado: registroExistente.estado
+      });
+    }
+
+    // A partir de aquí solo llega si es la primera vez
     const usuario = await Usuario.findOne({ apikey });
     if (!usuario) {
       return res.status(401).json({ error: "APIKEY inválida" });
@@ -145,23 +163,6 @@ router.post('/', async (req, res) => {
 
     const finDia = new Date(fecha);
     finDia.setHours(23, 59, 59, 999);
-
-    const yaRegistrado = await Asistencia.findOne({
-      alumnoId,
-      materiaId,
-      fechaHora: {
-        $gte: inicioDia,
-        $lte: finDia
-      }
-    });
-
-    if (yaRegistrado) {
-      return res.json({
-        mensaje: "Ya registrado",
-        fecha: yaRegistrado.fechaHora,
-        estado: yaRegistrado.estado
-      });
-    }
 
     const dia = fecha.toLocaleString('es-MX', { weekday: 'long' });
     const minutosActual = fecha.getHours() * 60 + fecha.getMinutes();
