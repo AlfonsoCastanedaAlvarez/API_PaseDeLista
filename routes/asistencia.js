@@ -119,26 +119,20 @@ router.get('/materia/:materiaId', validarApiKey, async (req, res) => {
 // POST /api/asistencia — registrar asistencia
 router.post('/', async (req, res) => {
   try {
-    const { apikey, dipositivoId, alumnoId, materiaId, fechaHora } = req.body;
+    const { apikey, alumnoId, materiaId, dipositivoId, fechaHora } = req.body;
 
-    // lo primero que se revisa antes de cualquier otra cosa
-    // Si este dispositivo ya registró a este alumno en esta materia alguna vez,
-    // regresa ese registro inmediatamente y corta aquí, sin tocar la base de datos
-    const registroExistente = await Asistencia.findOne({
-      dipositivoId,
-      alumnoId,
-      materiaId
-    });
+    // ✅ CHECK IDEMPOTENTE — la apikey es el token único
+    const existeAsistencia = await Asistencia.findOne({ apikey, alumnoId, materiaId });
 
-    if (registroExistente) {
-      return res.json({
-        mensaje: "Ya registrado",
-        fecha: registroExistente.fechaHora,
-        estado: registroExistente.estado
+    if (existeAsistencia) {
+      return res.status(208).json({
+        message: "Asistencia ya registrada",
+        fecha: existeAsistencia.fechaHora,
+        estado: existeAsistencia.estado
       });
     }
 
-    // A partir de aquí solo llega si es la primera vez
+    // Validar apikey
     const usuario = await Usuario.findOne({ apikey });
     if (!usuario) {
       return res.status(401).json({ error: "APIKEY inválida" });
@@ -157,12 +151,6 @@ router.post('/', async (req, res) => {
     if (isNaN(fecha)) {
       return res.status(400).json({ error: "Formato de fecha inválido" });
     }
-
-    const inicioDia = new Date(fecha);
-    inicioDia.setHours(0, 0, 0, 0);
-
-    const finDia = new Date(fecha);
-    finDia.setHours(23, 59, 59, 999);
 
     const dia = fecha.toLocaleString('es-MX', { weekday: 'long' });
     const minutosActual = fecha.getHours() * 60 + fecha.getMinutes();
@@ -186,6 +174,7 @@ router.post('/', async (req, res) => {
     });
 
     const nueva = new Asistencia({
+      apikey,
       alumnoId,
       materiaId,
       dipositivoId,
@@ -195,7 +184,7 @@ router.post('/', async (req, res) => {
 
     await nueva.save();
 
-    res.json({
+    return res.status(201).json({
       fecha: fecha,
       estado
     });
